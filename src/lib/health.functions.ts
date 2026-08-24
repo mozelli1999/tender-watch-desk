@@ -25,32 +25,20 @@ export const checkBackendHealth = createServerFn({ method: "GET" }).handler(
     }
 
     try {
-      const supabasePublic = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: {
-          fetch: (input, init) => {
-            const h = new Headers(init?.headers);
-            if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-              h.delete("Authorization");
-            }
-            h.set("apikey", key);
-            return fetch(input, { ...init, headers: h });
-          },
-        },
+      // Auth responde?
+      const authRes = await fetch(`${url}/auth/v1/health`, { headers: { apikey: key } });
+
+      // Data API responde? Sem tabelas ainda, um PGRST205 (404) já prova a conexão.
+      const dataRes = await fetch(`${url}/rest/v1/__radar_probe?select=id&limit=1`, {
+        headers: { apikey: key },
       });
 
-      // Auth responde? (sem usuário logado é o esperado nesta fase)
-      const { error: authError } = await supabasePublic.auth.getUser();
-      const authReachable = !authError || authError.status === 401 || authError.status === 403;
-
-      // Data API responde? Sem tabelas ainda, um 404 de recurso já prova conexão.
-      const res = await fetch(`${url}/rest/v1/`, { headers: { apikey: key } });
-
       return {
-        connected: res.ok || res.status === 404,
-        authReachable,
-        message: `Data API respondeu com HTTP ${res.status}.`,
+        connected: dataRes.ok || dataRes.status === 404,
+        authReachable: authRes.ok,
+        message: `Auth HTTP ${authRes.status} · Data API HTTP ${dataRes.status} (sem tabelas criadas).`,
       };
+
     } catch (err) {
       return {
         connected: false,
