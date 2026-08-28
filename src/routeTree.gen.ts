@@ -10,6 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as MelhoresDoDiaRouteImport } from './routes/melhores-do-dia'
+import { Route as BuscaRouteImport } from './routes/busca'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as ProdutosRouteImport } from './routes/produtos'
+import { Route as FornecedoresRouteImport } from './routes/fornecedores'
+import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as OportunidadeIdRouteImport } from './routes/oportunidade/$id'
+import { Route as SimuladorOpportunityIdRouteImport } from './routes/simulador/$opportunityId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -17,26 +28,177 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const MelhoresDoDiaRoute = MelhoresDoDiaRouteImport.update({
+  id: '/melhores-do-dia',
+  path: '/melhores-do-dia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const BuscaRoute = BuscaRouteImport.update({
+  id: '/busca',
+  path: '/busca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const ProdutosRoute = ProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const FornecedoresRoute = FornecedoresRouteImport.update({
+  id: '/fornecedores',
+  path: '/fornecedores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const HistoricoRoute = HistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const OportunidadeIdRoute = OportunidadeIdRouteImport.update({
+  id: '/oportunidade/$id',
+  path: '/oportunidade/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const SimuladorOpportunityIdRoute = SimuladorOpportunityIdRouteImport.update({
+  id: '/simulador/$opportunityId',
+  path: '/simulador/$opportunityId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof DashboardRoute
+  '/melhores-do-dia': typeof MelhoresDoDiaRoute
+  '/busca': typeof BuscaRoute
+  '/pipeline': typeof PipelineRoute
+  '/produtos': typeof ProdutosRoute
+  '/fornecedores': typeof FornecedoresRoute
+  '/historico': typeof HistoricoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/oportunidade/$id': typeof OportunidadeIdRoute
+  '/simulador/$opportunityId': typeof SimuladorOpportunityIdRoute
 }
+
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof DashboardRoute
+  '/melhores-do-dia': typeof MelhoresDoDiaRoute
+  '/busca': typeof BuscaRoute
+  '/pipeline': typeof PipelineRoute
+  '/produtos': typeof ProdutosRoute
+  '/fornecedores': typeof FornecedoresRoute
+  '/historico': typeof HistoricoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/oportunidade/$id': typeof OportunidadeIdRoute
+  '/simulador/$opportunityId': typeof SimuladorOpportunityIdRoute
 }
+
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof DashboardRoute
+  '/melhores-do-dia': typeof MelhoresDoDiaRoute
+  '/busca': typeof BuscaRoute
+  '/pipeline': typeof PipelineRoute
+  '/produtos': typeof ProdutosRoute
+  '/fornecedores': typeof FornecedoresRoute
+  '/historico': typeof HistoricoRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/oportunidade/$id': typeof OportunidadeIdRoute
+  '/simulador/$opportunityId': typeof SimuladorOpportunityIdRoute
 }
+
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/melhores-do-dia'
+    | '/busca'
+    | '/pipeline'
+    | '/produtos'
+    | '/fornecedores'
+    | '/historico'
+    | '/configuracoes'
+    | '/oportunidade/$id'
+    | '/simulador/$opportunityId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/melhores-do-dia'
+    | '/busca'
+    | '/pipeline'
+    | '/produtos'
+    | '/fornecedores'
+    | '/historico'
+    | '/configuracoes'
+    | '/oportunidade/$id'
+    | '/simulador/$opportunityId'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/melhores-do-dia'
+    | '/busca'
+    | '/pipeline'
+    | '/produtos'
+    | '/fornecedores'
+    | '/historico'
+    | '/configuracoes'
+    | '/oportunidade/$id'
+    | '/simulador/$opportunityId'
   fileRoutesById: FileRoutesById
 }
+
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  DashboardRoute: typeof DashboardRoute
+  MelhoresDoDiaRoute: typeof MelhoresDoDiaRoute
+  BuscaRoute: typeof BuscaRoute
+  PipelineRoute: typeof PipelineRoute
+  ProdutosRoute: typeof ProdutosRoute
+  FornecedoresRoute: typeof FornecedoresRoute
+  HistoricoRoute: typeof HistoricoRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  OportunidadeIdRoute: typeof OportunidadeIdRoute
+  SimuladorOpportunityIdRoute: typeof SimuladorOpportunityIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +210,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/melhores-do-dia': {
+      id: '/melhores-do-dia'
+      path: '/melhores-do-dia'
+      fullPath: '/melhores-do-dia'
+      preLoaderRoute: typeof MelhoresDoDiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/busca': {
+      id: '/busca'
+      path: '/busca'
+      fullPath: '/busca'
+      preLoaderRoute: typeof BuscaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produtos': {
+      id: '/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof ProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fornecedores': {
+      id: '/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/fornecedores'
+      preLoaderRoute: typeof FornecedoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historico': {
+      id: '/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oportunidade/$id': {
+      id: '/oportunidade/$id'
+      path: '/oportunidade/$id'
+      fullPath: '/oportunidade/$id'
+      preLoaderRoute: typeof OportunidadeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulador/$opportunityId': {
+      id: '/simulador/$opportunityId'
+      path: '/simulador/$opportunityId'
+      fullPath: '/simulador/$opportunityId'
+      preLoaderRoute: typeof SimuladorOpportunityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  DashboardRoute: DashboardRoute,
+  MelhoresDoDiaRoute: MelhoresDoDiaRoute,
+  BuscaRoute: BuscaRoute,
+  PipelineRoute: PipelineRoute,
+  ProdutosRoute: ProdutosRoute,
+  FornecedoresRoute: FornecedoresRoute,
+  HistoricoRoute: HistoricoRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  OportunidadeIdRoute: OportunidadeIdRoute,
+  SimuladorOpportunityIdRoute: SimuladorOpportunityIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
