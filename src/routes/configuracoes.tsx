@@ -34,6 +34,9 @@ import {
   ShieldCheck,
   Building,
   Sparkles,
+  RefreshCw,
+  Clock,
+  CheckCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -133,6 +136,12 @@ function ConfiguracoesPage() {
   // Fontes de Licitação (sources)
   const [sources, setSources] = useState<SourceItem[]>(DEFAULT_SOURCES);
   const [sourcesLoading, setSourcesLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    opportunities_found: number;
+    opportunities_new: number;
+    sources_processed: number;
+  } | null>(null);
 
   // Erro de Validação
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -253,6 +262,46 @@ function ConfiguracoesPage() {
       toast.success(`Fonte ${newStatus ? "ativada" : "desativada"} com sucesso.`);
     } catch (err) {
       console.error("Erro ao atualizar fonte:", err);
+    }
+  };
+
+  // Disparar Sincronização Manual via Edge Function sync-sources
+  const handleSyncNow = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-sources", {
+        body: { trigger: "manual" },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSyncResult({
+        opportunities_found: data?.opportunities_found ?? 0,
+        opportunities_new: data?.opportunities_new ?? 0,
+        sources_processed: data?.sources_processed ?? 0,
+      });
+
+      toast.success(
+        `Sincronização concluída! ${data?.opportunities_new ?? 0} novas oportunidades compatíveis capturadas.`
+      );
+
+      // Recarrega sources atualizadas com novo last_synced_at
+      const { data: sourcesData } = await supabase
+        .from("sources")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (sourcesData && sourcesData.length > 0) {
+        setSources(sourcesData as SourceItem[]);
+      }
+    } catch (err: any) {
+      console.error("Erro ao executar sincronização manual:", err);
+      toast.error(`Falha ao sincronizar fontes: ${err?.message || "Erro de conexão"}`);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -693,21 +742,46 @@ function ConfiguracoesPage() {
 
         {/* Card 4: Gestão de Fontes Oficiais */}
         <Card className="border-border shadow-xs">
-          <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2 text-primary">
-              <Database className="h-5 w-5" />
-              <CardTitle className="text-base font-semibold">Fontes Oficiais Integradas</CardTitle>
+          <CardHeader className="space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-primary">
+                <Database className="h-5 w-5" />
+                <CardTitle className="text-base font-semibold">Fontes Oficiais Integradas</CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Ative ou desative as fontes oficiais e gratuitas de captação de oportunidades.
+              </CardDescription>
             </div>
-            <CardDescription className="text-xs">
-              Ative ou desative as fontes oficiais e gratuitas de captação de oportunidades.
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSyncNow}
+                disabled={syncing}
+                className="gap-2 border-primary/40 text-primary hover:bg-primary/10 shadow-xs"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin text-primary" : ""}`} />
+                {syncing ? "Sincronizando fontes..." : "Sincronizar agora"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {syncResult && (
+              <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <AlertTitle className="text-xs font-semibold">Sincronização executada com sucesso!</AlertTitle>
+                <AlertDescription className="text-xs mt-1">
+                  {syncResult.opportunities_new} novas oportunidades adicionadas ({syncResult.opportunities_found} processadas em {syncResult.sources_processed} fontes ativas).
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="divide-y divide-border rounded-lg border border-border">
               {sources.map((source) => (
                 <div
                   key={source.id}
-                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/20"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 transition-colors hover:bg-muted/20"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -718,19 +792,27 @@ function ConfiguracoesPage() {
                         {source.integration_type}
                       </Badge>
                     </div>
-                    {source.base_url && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Globe className="h-3 w-3" />
-                        <a
-                          href={source.base_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline text-muted-foreground"
-                        >
-                          {source.base_url}
-                        </a>
-                      </p>
-                    )}
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      {source.base_url && (
+                        <p className="flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          <a
+                            href={source.base_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline text-muted-foreground"
+                          >
+                            {source.base_url}
+                          </a>
+                        </p>
+                      )}
+                      {source.last_synced_at && (
+                        <p className="flex items-center gap-1 text-[11px] text-muted-foreground/80">
+                          <Clock className="h-3 w-3" />
+                          Última sincronização: {new Date(source.last_synced_at).toLocaleString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3">
