@@ -112,7 +112,7 @@ function MelhoresDoDiaPage() {
     setError(null);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc("get_top_10_opportunities");
+      const { data, error: rpcError } = await (supabase.rpc as any)("get_top_10_opportunities");
 
       if (rpcError) {
         throw rpcError;
@@ -161,7 +161,7 @@ function MelhoresDoDiaPage() {
     );
 
     try {
-      const { error: flagErr } = await supabase.rpc("upsert_pipeline_flag", {
+      const { error: flagErr } = await (supabase.rpc as any)("upsert_pipeline_flag", {
         p_opportunity_id: oppId,
         p_favorite: newFav,
       });
@@ -180,7 +180,7 @@ function MelhoresDoDiaPage() {
     setOpportunities((prev) => prev.filter((o) => o.id !== oppId));
 
     try {
-      const { error: flagErr } = await supabase.rpc("upsert_pipeline_flag", {
+      const { error: flagErr } = await (supabase.rpc as any)("upsert_pipeline_flag", {
         p_opportunity_id: oppId,
         p_discard: true,
       });
@@ -197,7 +197,7 @@ function MelhoresDoDiaPage() {
   const handleSendToPipeline = async (oppId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const { error: moveErr } = await supabase.rpc("move_pipeline_stage", {
+      const { error: moveErr } = await (supabase.rpc as any)("move_pipeline_stage", {
         p_opportunity_id: oppId,
         p_stage: "analisando",
       });
@@ -350,7 +350,7 @@ function MelhoresDoDiaPage() {
           /* Cards Ranqueados */
           <div className="space-y-4">
             {opportunities.map((opp, index) => {
-              const scoreBadge = SCORE_BADGES[opp.classification] || SCORE_BADGES.red;
+              const scoreBadge = SCORE_BADGES[opp.classification] ?? SCORE_BADGES['red']!;
               const isFirst = index === 0;
 
               return (

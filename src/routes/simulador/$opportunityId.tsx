@@ -261,10 +261,10 @@ function SimuladorPage() {
       setCalcError(null);
 
       const overrides: Record<string, number> = {};
-      if (freightOverride !== "") overrides.freight_cost = Number(freightOverride);
-      if (taxPctOverride !== "") overrides.tax_pct = Number(taxPctOverride);
-      if (otherCosts !== "") overrides.other_costs = Number(otherCosts);
-      if (bidValue !== "") overrides.bid_value = Number(bidValue);
+      if (freightOverride !== "") overrides["freight_cost"] = Number(freightOverride);
+      if (taxPctOverride !== "") overrides["tax_pct"] = Number(taxPctOverride);
+      if (otherCosts !== "") overrides["other_costs"] = Number(otherCosts);
+      if (bidValue !== "") overrides["bid_value"] = Number(bidValue);
 
       try {
         const { data, error: fnError } = await supabase.functions.invoke(

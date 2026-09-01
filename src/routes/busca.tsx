@@ -161,24 +161,24 @@ function BuscaPage() {
         offset: (pageNum - 1) * pageSize,
       };
 
-      if (keyword.trim()) filtersPayload.keyword = keyword.trim();
-      if (category.trim()) filtersPayload.category = category.trim();
-      if (catmat.trim()) filtersPayload.catmat_catser_code = catmat.trim();
-      if (state !== "all") filtersPayload.state = state;
-      if (city.trim()) filtersPayload.city = city.trim();
-      if (modality !== "all") filtersPayload.modality = modality;
-      if (valueMin) filtersPayload.value_min = Number(valueMin);
-      if (valueMax) filtersPayload.value_max = Number(valueMax);
-      if (deliveryMaxDays) filtersPayload.delivery_deadline_max_days = Number(deliveryMaxDays);
-      if (isMeEppOnly) filtersPayload.is_me_epp = true;
-      if (onlyCompatible) filtersPayload.only_compatible = true;
-      if (onlyFavorites) filtersPayload.is_favorite = true;
-      if (hideDiscarded) filtersPayload.is_discarded = false;
-      if (classification !== "all") filtersPayload.classification = classification;
-      if (scoreMin) filtersPayload.score_min = Number(scoreMin);
-      if (sourceSlug !== "all") filtersPayload.source_slug = sourceSlug;
+      if (keyword.trim()) filtersPayload["keyword"] = keyword.trim();
+      if (category.trim()) filtersPayload["category"] = category.trim();
+      if (catmat.trim()) filtersPayload["catmat_catser_code"] = catmat.trim();
+      if (state !== "all") filtersPayload["state"] = state;
+      if (city.trim()) filtersPayload["city"] = city.trim();
+      if (modality !== "all") filtersPayload["modality"] = modality;
+      if (valueMin) filtersPayload["value_min"] = Number(valueMin);
+      if (valueMax) filtersPayload["value_max"] = Number(valueMax);
+      if (deliveryMaxDays) filtersPayload["delivery_deadline_max_days"] = Number(deliveryMaxDays);
+      if (isMeEppOnly) filtersPayload["is_me_epp"] = true;
+      if (onlyCompatible) filtersPayload["only_compatible"] = true;
+      if (onlyFavorites) filtersPayload["is_favorite"] = true;
+      if (hideDiscarded) filtersPayload["is_discarded"] = false;
+      if (classification !== "all") filtersPayload["classification"] = classification;
+      if (scoreMin) filtersPayload["score_min"] = Number(scoreMin);
+      if (sourceSlug !== "all") filtersPayload["source_slug"] = sourceSlug;
 
-      const { data, error: rpcErr } = await supabase.rpc(
+      const { data, error: rpcErr } = await (supabase.rpc as any)(
         "search_opportunities",
         { filters: filtersPayload }
       );
@@ -242,7 +242,7 @@ function BuscaPage() {
     );
 
     try {
-      await supabase.rpc("upsert_pipeline_flag", {
+      await (supabase.rpc as any)("upsert_pipeline_flag", {
         p_opportunity_id: oppId,
         p_favorite: newFav,
       });

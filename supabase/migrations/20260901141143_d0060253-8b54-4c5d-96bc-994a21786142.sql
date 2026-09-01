@@ -1,0 +1,1 @@
+CREATE POLICY "Operador le seus editais" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'editais' AND (storage.foldername(name))[1] = auth.uid()::text);

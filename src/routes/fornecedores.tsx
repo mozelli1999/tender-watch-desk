@@ -197,7 +197,7 @@ function FornecedoresPage() {
       setProductSuppliers((psData as any[]) || []);
 
       if (prodData && prodData.length > 0 && selectedProductForComparison === "all") {
-        setSelectedProductForComparison(prodData[0].id);
+        setSelectedProductForComparison(prodData[0]!.id);
       }
     } catch (err: any) {
       console.error("Erro ao carregar dados de fornecedores:", err);
@@ -285,8 +285,8 @@ function FornecedoresPage() {
   // Handler Vínculo Produto ↔ Fornecedor
   const handleOpenNewLink = () => {
     setEditingLinkId(null);
-    setLinkProductId(products.length > 0 ? products[0].id : "");
-    setLinkSupplierId(suppliers.length > 0 ? suppliers[0].id : "");
+    setLinkProductId(products.length > 0 ? products[0]!.id : "");
+    setLinkSupplierId(suppliers.length > 0 ? suppliers[0]!.id : "");
     setLinkUnitPrice("");
     setLinkLeadTime("");
     setLinkFreight("");
