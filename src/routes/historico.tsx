@@ -160,7 +160,7 @@ function HistoricoPage() {
 
     try {
       // 1. Carregar relatório via RPC get_intelligence_report
-      const { data: rpcData, error: rpcErr } = await supabase.rpc("get_intelligence_report");
+      const { data: rpcData, error: rpcErr } = await (supabase.rpc as any)("get_intelligence_report");
 
       if (rpcErr) {
         console.warn("Aviso RPC inteligência:", rpcErr);

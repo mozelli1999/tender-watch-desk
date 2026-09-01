@@ -219,7 +219,7 @@ function PipelinePage() {
     );
 
     try {
-      const { error: moveErr } = await supabase.rpc("move_pipeline_stage", {
+      const { error: moveErr } = await (supabase.rpc as any)("move_pipeline_stage", {
         p_opportunity_id: oppId,
         p_stage: newStage,
       });
@@ -250,7 +250,7 @@ function PipelinePage() {
     );
 
     try {
-      await supabase.rpc("upsert_pipeline_flag", {
+      await (supabase.rpc as any)("upsert_pipeline_flag", {
         p_opportunity_id: oppId,
         p_favorite: newFav,
       });
@@ -268,7 +268,7 @@ function PipelinePage() {
     );
 
     try {
-      await supabase.rpc("upsert_pipeline_flag", {
+      await (supabase.rpc as any)("upsert_pipeline_flag", {
         p_opportunity_id: oppId,
         p_discard: newDiscard,
       });

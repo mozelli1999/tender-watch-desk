@@ -126,7 +126,7 @@ function DashboardPage() {
 
     try {
       // 1. Carregar métricas via RPC get_dashboard_metrics
-      const { data: metricsData, error: metricsError } = await supabase.rpc(
+      const { data: metricsData, error: metricsError } = await (supabase.rpc as any)(
         "get_dashboard_metrics",
         { period_days: 7 }
       );
