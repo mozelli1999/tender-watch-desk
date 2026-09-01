@@ -658,7 +658,7 @@ function ConfiguracoesPage() {
             <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/60">
               <span className="text-xs text-muted-foreground mr-1">Regiões:</span>
               {Object.keys(REGIONS).map((region) => {
-                const isSelected = REGIONS[region].every((uf) => serviceStates.includes(uf));
+                const isSelected = REGIONS[region]!.every((uf) => serviceStates.includes(uf));
                 return (
                   <button
                     key={region}

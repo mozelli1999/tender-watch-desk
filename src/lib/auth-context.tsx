@@ -54,9 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-        },
+        ...(typeof window !== "undefined"
+          ? { options: { emailRedirectTo: window.location.origin } }
+          : {}),
       });
       return { error };
     } catch (err) {
@@ -66,9 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: typeof window !== "undefined" ? `${window.location.origin}/redefinir-senha` : undefined,
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email,
+        typeof window !== "undefined"
+          ? { redirectTo: `${window.location.origin}/redefinir-senha` }
+          : {},
+      );
       return { error };
     } catch (err) {
       return { error: err as AuthError };

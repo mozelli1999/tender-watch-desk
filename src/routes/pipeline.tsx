@@ -523,9 +523,9 @@ function PipelinePage() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx - 1].key)}
+                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx - 1]!.key)}
                                   className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                  title={`Voltar para ${PIPELINE_STAGES[colIdx - 1].title}`}
+                                  title={`Voltar para ${PIPELINE_STAGES[colIdx - 1]!.title}`}
                                 >
                                   <ChevronLeft className="h-3 w-3" />
                                 </Button>
@@ -562,9 +562,9 @@ function PipelinePage() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx + 1].key)}
+                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx + 1]!.key)}
                                   className="h-6 w-6 p-0 text-primary hover:bg-primary/10"
-                                  title={`Avançar para ${PIPELINE_STAGES[colIdx + 1].title}`}
+                                  title={`Avançar para ${PIPELINE_STAGES[colIdx + 1]!.title}`}
                                 >
                                   <ChevronRight className="h-3.5 w-3.5" />
                                 </Button>

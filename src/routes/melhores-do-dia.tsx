@@ -350,7 +350,7 @@ function MelhoresDoDiaPage() {
           /* Cards Ranqueados */
           <div className="space-y-4">
             {opportunities.map((opp, index) => {
-              const scoreBadge = SCORE_BADGES[opp.classification] || SCORE_BADGES.red;
+              const scoreBadge = SCORE_BADGES[opp.classification] ?? SCORE_BADGES['red']!;
               const isFirst = index === 0;
 
               return (
