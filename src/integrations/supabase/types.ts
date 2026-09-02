@@ -754,7 +754,51 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_dashboard_metrics: { Args: { period_days?: number }; Returns: Json }
+      search_opportunities: {
+        Args: { filters?: Json }
+        Returns: {
+          agency_name: string
+          category: string
+          catmat_catser_code: string
+          city: string
+          classification: string
+          closing_date: string
+          delivery_deadline_days: number
+          estimated_value: number
+          id: string
+          is_compatible: boolean
+          is_discarded: boolean
+          is_favorite: boolean
+          is_me_epp: boolean
+          modality: string
+          object_description: string
+          payment_deadline_days: number
+          process_number: string
+          quantity: number
+          reasons: string[]
+          requires_certificate: boolean
+          requires_min_capital: boolean
+          requires_sample: boolean
+          requires_warranty: boolean
+          score: number
+          session_date: string
+          source_slug: string
+          source_url: string
+          stage: string
+          state: string
+          status_situation: string
+          total_count: number
+        }[]
+      }
+      upsert_pipeline_flag: {
+        Args: {
+          p_discard?: boolean
+          p_favorite?: boolean
+          p_opportunity_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
