@@ -249,6 +249,7 @@ export type Database = {
       opportunities: {
         Row: {
           agency_name: string | null
+          business_key: string | null
           category: string | null
           catmat_catser_code: string | null
           city: string | null
@@ -261,6 +262,7 @@ export type Database = {
           is_me_epp: boolean | null
           modality: string | null
           object_description: string | null
+          origin_portal: string | null
           owner_id: string
           payment_deadline_days: number | null
           process_number: string | null
@@ -280,6 +282,7 @@ export type Database = {
         }
         Insert: {
           agency_name?: string | null
+          business_key?: string | null
           category?: string | null
           catmat_catser_code?: string | null
           city?: string | null
@@ -292,6 +295,7 @@ export type Database = {
           is_me_epp?: boolean | null
           modality?: string | null
           object_description?: string | null
+          origin_portal?: string | null
           owner_id: string
           payment_deadline_days?: number | null
           process_number?: string | null
@@ -311,6 +315,7 @@ export type Database = {
         }
         Update: {
           agency_name?: string | null
+          business_key?: string | null
           category?: string | null
           catmat_catser_code?: string | null
           city?: string | null
@@ -323,6 +328,7 @@ export type Database = {
           is_me_epp?: boolean | null
           modality?: string | null
           object_description?: string | null
+          origin_portal?: string | null
           owner_id?: string
           payment_deadline_days?: number | null
           process_number?: string | null
@@ -641,35 +647,44 @@ export type Database = {
       }
       sources: {
         Row: {
+          access_status: string
           base_url: string | null
           created_at: string
           id: string
           integration_type: string
           is_active: boolean
           last_synced_at: string | null
+          legal_note: string | null
           name: string
+          priority: number
           slug: string
           updated_at: string
         }
         Insert: {
+          access_status?: string
           base_url?: string | null
           created_at?: string
           id?: string
           integration_type: string
           is_active?: boolean
           last_synced_at?: string | null
+          legal_note?: string | null
           name: string
+          priority?: number
           slug: string
           updated_at?: string
         }
         Update: {
+          access_status?: string
           base_url?: string | null
           created_at?: string
           id?: string
           integration_type?: string
           is_active?: boolean
           last_synced_at?: string | null
+          legal_note?: string | null
           name?: string
+          priority?: number
           slug?: string
           updated_at?: string
         }
@@ -773,6 +788,7 @@ export type Database = {
           is_me_epp: boolean
           modality: string
           object_description: string
+          origin_portal: string
           payment_deadline_days: number
           process_number: string
           quantity: number
