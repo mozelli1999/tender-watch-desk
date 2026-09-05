@@ -98,7 +98,11 @@ function normalize(r: any, ctx: ConnectorContext): NormalizedOpportunity | null 
       modality,
       year: r.anoCompra,
     }),
+    agency_document: orgao.cnpj ?? null,
+    is_srp: typeof r.srp === "boolean" ? r.srp : null,
+    published_at: r.dataPublicacaoPncp ?? null,
     origin_portal: portalFromLink(link) ?? "pncp",
+
     raw_payload: r,
   };
 }
