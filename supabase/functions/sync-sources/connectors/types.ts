@@ -7,8 +7,12 @@ export interface NormalizedOpportunity {
   source_external_id: string;
   source_url: string;
   agency_name: string | null;
+  agency_document: string | null;
   process_number: string | null;
   modality: string | null;
+  is_srp: boolean | null;
+  published_at: string | null;
+
   object_description: string | null;
   category: string | null;
   catmat_catser_code: string | null;

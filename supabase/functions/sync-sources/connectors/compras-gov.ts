@@ -88,7 +88,11 @@ function normalize(r: any, ctx: ConnectorContext): NormalizedOpportunity | null 
       modality,
       year: r.anoCompra ?? String(r.data_publicacao ?? "").slice(0, 4),
     }),
+    agency_document: r.cnpj ?? (r.uasg ? String(r.uasg) : null),
+    is_srp: typeof r.srp === "boolean" ? r.srp : null,
+    published_at: r.dataPublicacaoPncp ?? r.data_publicacao ?? null,
     origin_portal: "compras_gov",
+
     raw_payload: r,
   };
 }
