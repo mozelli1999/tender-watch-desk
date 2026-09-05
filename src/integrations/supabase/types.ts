@@ -20,8 +20,14 @@ export type Database = {
           created_at: string
           default_tax_pct: number
           id: string
+          max_delivery_days: number | null
+          max_value: number | null
           min_margin_pct: number
+          min_value: number | null
           owner_id: string
+          prefer_me_epp: boolean
+          preferred_categories: string[]
+          preferred_modalities: string[]
           score_green_min: number
           score_yellow_min: number
           service_cities: string[]
@@ -33,8 +39,14 @@ export type Database = {
           created_at?: string
           default_tax_pct?: number
           id?: string
+          max_delivery_days?: number | null
+          max_value?: number | null
           min_margin_pct?: number
+          min_value?: number | null
           owner_id: string
+          prefer_me_epp?: boolean
+          preferred_categories?: string[]
+          preferred_modalities?: string[]
           score_green_min?: number
           score_yellow_min?: number
           service_cities?: string[]
@@ -46,8 +58,14 @@ export type Database = {
           created_at?: string
           default_tax_pct?: number
           id?: string
+          max_delivery_days?: number | null
+          max_value?: number | null
           min_margin_pct?: number
+          min_value?: number | null
           owner_id?: string
+          prefer_me_epp?: boolean
+          preferred_categories?: string[]
+          preferred_modalities?: string[]
           score_green_min?: number
           score_yellow_min?: number
           service_cities?: string[]
@@ -59,10 +77,18 @@ export type Database = {
       edital_analyses: {
         Row: {
           ai_model_used: string | null
+          analyzed_at: string | null
+          catalog_info: string | null
           certificates_info: string | null
+          content_hash: string | null
           created_at: string
           dates_json: Json | null
           delivery_info: string | null
+          delivery_location: string | null
+          documents_json: Json | null
+          duration_ms: number | null
+          error_message: string | null
+          estimated_cost_usd: number | null
           habilitation_info: string | null
           id: string
           items_json: Json | null
@@ -71,20 +97,36 @@ export type Database = {
           payment_info: string | null
           pdf_storage_path: string | null
           penalties_info: string | null
+          positive_points: string[] | null
+          proposal_deadline: string | null
+          recommendation: string | null
           required_documents: string[] | null
           risk_points: string[] | null
           samples_info: string | null
+          source_documents_urls: string[] | null
+          special_requirements: string | null
           status: string
+          summary: string | null
+          tokens_input: number | null
+          tokens_output: number | null
           updated_at: string
           values_json: Json | null
           warranties_info: string | null
         }
         Insert: {
           ai_model_used?: string | null
+          analyzed_at?: string | null
+          catalog_info?: string | null
           certificates_info?: string | null
+          content_hash?: string | null
           created_at?: string
           dates_json?: Json | null
           delivery_info?: string | null
+          delivery_location?: string | null
+          documents_json?: Json | null
+          duration_ms?: number | null
+          error_message?: string | null
+          estimated_cost_usd?: number | null
           habilitation_info?: string | null
           id?: string
           items_json?: Json | null
@@ -93,20 +135,36 @@ export type Database = {
           payment_info?: string | null
           pdf_storage_path?: string | null
           penalties_info?: string | null
+          positive_points?: string[] | null
+          proposal_deadline?: string | null
+          recommendation?: string | null
           required_documents?: string[] | null
           risk_points?: string[] | null
           samples_info?: string | null
+          source_documents_urls?: string[] | null
+          special_requirements?: string | null
           status?: string
+          summary?: string | null
+          tokens_input?: number | null
+          tokens_output?: number | null
           updated_at?: string
           values_json?: Json | null
           warranties_info?: string | null
         }
         Update: {
           ai_model_used?: string | null
+          analyzed_at?: string | null
+          catalog_info?: string | null
           certificates_info?: string | null
+          content_hash?: string | null
           created_at?: string
           dates_json?: Json | null
           delivery_info?: string | null
+          delivery_location?: string | null
+          documents_json?: Json | null
+          duration_ms?: number | null
+          error_message?: string | null
+          estimated_cost_usd?: number | null
           habilitation_info?: string | null
           id?: string
           items_json?: Json | null
@@ -115,10 +173,18 @@ export type Database = {
           payment_info?: string | null
           pdf_storage_path?: string | null
           penalties_info?: string | null
+          positive_points?: string[] | null
+          proposal_deadline?: string | null
+          recommendation?: string | null
           required_documents?: string[] | null
           risk_points?: string[] | null
           samples_info?: string | null
+          source_documents_urls?: string[] | null
+          special_requirements?: string | null
           status?: string
+          summary?: string | null
+          tokens_input?: number | null
+          tokens_output?: number | null
           updated_at?: string
           values_json?: Json | null
           warranties_info?: string | null
@@ -248,8 +314,10 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          agency_document: string | null
           agency_name: string | null
           business_key: string | null
+          canonical_id: string | null
           category: string | null
           catmat_catser_code: string | null
           city: string | null
@@ -260,12 +328,14 @@ export type Database = {
           id: string
           is_compatible: boolean
           is_me_epp: boolean | null
+          is_srp: boolean | null
           modality: string | null
           object_description: string | null
           origin_portal: string | null
           owner_id: string
           payment_deadline_days: number | null
           process_number: string | null
+          published_at: string | null
           quantity: number | null
           raw_payload: Json | null
           requires_certificate: boolean | null
@@ -281,8 +351,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_document?: string | null
           agency_name?: string | null
           business_key?: string | null
+          canonical_id?: string | null
           category?: string | null
           catmat_catser_code?: string | null
           city?: string | null
@@ -293,12 +365,14 @@ export type Database = {
           id?: string
           is_compatible?: boolean
           is_me_epp?: boolean | null
+          is_srp?: boolean | null
           modality?: string | null
           object_description?: string | null
           origin_portal?: string | null
           owner_id: string
           payment_deadline_days?: number | null
           process_number?: string | null
+          published_at?: string | null
           quantity?: number | null
           raw_payload?: Json | null
           requires_certificate?: boolean | null
@@ -314,8 +388,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_document?: string | null
           agency_name?: string | null
           business_key?: string | null
+          canonical_id?: string | null
           category?: string | null
           catmat_catser_code?: string | null
           city?: string | null
@@ -326,12 +402,14 @@ export type Database = {
           id?: string
           is_compatible?: boolean
           is_me_epp?: boolean | null
+          is_srp?: boolean | null
           modality?: string | null
           object_description?: string | null
           origin_portal?: string | null
           owner_id?: string
           payment_deadline_days?: number | null
           process_number?: string | null
+          published_at?: string | null
           quantity?: number | null
           raw_payload?: Json | null
           requires_certificate?: boolean | null
@@ -347,6 +425,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "opportunities_canonical_id_fkey"
+            columns: ["canonical_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "opportunities_source_id_fkey"
             columns: ["source_id"]
@@ -773,6 +858,7 @@ export type Database = {
       search_opportunities: {
         Args: { filters?: Json }
         Returns: {
+          agency_document: string
           agency_name: string
           category: string
           catmat_catser_code: string
@@ -781,16 +867,19 @@ export type Database = {
           closing_date: string
           delivery_deadline_days: number
           estimated_value: number
+          has_analysis: boolean
           id: string
           is_compatible: boolean
           is_discarded: boolean
           is_favorite: boolean
           is_me_epp: boolean
+          is_srp: boolean
           modality: string
           object_description: string
           origin_portal: string
           payment_deadline_days: number
           process_number: string
+          published_at: string
           quantity: number
           reasons: string[]
           requires_certificate: boolean
@@ -801,6 +890,7 @@ export type Database = {
           session_date: string
           source_slug: string
           source_url: string
+          sources_count: number
           stage: string
           state: string
           status_situation: string
