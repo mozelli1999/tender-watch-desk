@@ -160,14 +160,18 @@ serve(async (req) => {
         await supabase.from("notifications").insert(notifications);
       }
 
-      // Disparar analyze-edital para cada nova compatível (fire-and-forget)
-      for (const oppId of newlyCompatibleIds) {
-        supabase.functions
-          .invoke("analyze-edital", { body: { opportunity_id: oppId } })
-          .catch((err: Error) =>
-            console.error(`Failed to invoke analyze-edital for ${oppId}:`, err)
-          );
-      }
+      // IMPORTANTE: nenhuma IA é acionada aqui.
+      // A análise do edital com Gemini acontece SOMENTE quando o operador clica
+      // em "Analisar edital". Aqui encadeamos apenas o score (100% banco de dados).
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/compute-score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ opportunity_ids: newlyCompatibleIds }),
+      }).catch((err: Error) => console.error("Falha ao encadear compute-score:", err));
+
     }
 
     return json({

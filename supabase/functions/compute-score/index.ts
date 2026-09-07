@@ -1,312 +1,291 @@
 // Edge Function: compute-score
-// Calcula o Score 0–100 da oportunidade com base nas 6 dimensões estratégicas,
-// classifica em 🟢 (green), 🟡 (yellow) ou 🔴 (red) com base em company_settings,
-// salva em opportunity_scores e gera notificação high_score se verde.
+// Score 0–100 SEM IA — calculado apenas com dados do banco e do perfil do operador.
+//
+// Dimensões:
+//   compatibilidade de categoria/produto ... 30
+//   valor dentro da faixa desejada ......... 20
+//   localização (UF / município) ........... 15
+//   modalidade preferida ................... 10
+//   prazo de entrega ....................... 10
+//   ME/EPP ................................. 10
+//   exigências documentais ................. 5
+//
+// Classificação: 🟢 80–100 | 🟡 60–79 | 🟠 40–59 | 🔴 0–39
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ComputeScoreRequest {
   opportunity_id?: string;
+  opportunity_ids?: string[];
   recompute_all?: boolean;
 }
+
+function classify(score: number): "green" | "yellow" | "orange" | "red" {
+  if (score >= 80) return "green";
+  if (score >= 60) return "yellow";
+  if (score >= 40) return "orange";
+  return "red";
+}
+
+const norm = (v: unknown) =>
+  String(v ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   try {
     const body: ComputeScoreRequest = await req.json().catch(() => ({}));
-    const { opportunity_id, recompute_all = false } = body;
+    const { opportunity_id, opportunity_ids, recompute_all = false } = body;
 
-    // 1. Identificar quais oportunidades calcular
-    let oppQuery = supabase
-      .from("opportunities")
-      .select(`
-        id,
-        owner_id,
-        agency_name,
-        process_number,
-        modality,
-        object_description,
-        estimated_value,
-        delivery_deadline_days,
-        payment_deadline_days,
-        state,
-        city,
-        is_me_epp,
-        requires_sample,
-        requires_certificate,
-        requires_warranty,
-        requires_min_capital,
-        is_compatible
-      `);
+    let oppQuery = supabase.from("opportunities").select(`
+      id, owner_id, agency_name, modality, object_description, category,
+      estimated_value, delivery_deadline_days, payment_deadline_days,
+      state, city, is_me_epp, is_srp, requires_sample, requires_certificate,
+      requires_warranty, requires_min_capital, is_compatible, canonical_id
+    `);
 
     if (opportunity_id) {
       oppQuery = oppQuery.eq("id", opportunity_id);
+    } else if (opportunity_ids?.length) {
+      oppQuery = oppQuery.in("id", opportunity_ids);
     } else if (!recompute_all) {
-      oppQuery = oppQuery.eq("is_compatible", true).limit(50);
-    } else {
-      oppQuery = oppQuery.eq("is_compatible", true);
+      oppQuery = oppQuery.order("created_at", { ascending: false }).limit(200);
     }
 
     const { data: opportunities, error: oppError } = await oppQuery;
-    if (oppError || !opportunities || opportunities.length === 0) {
-      return new Response(
-        JSON.stringify({ status: "success", scored: 0, results: [], message: "Nenhuma oportunidade a processar." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (oppError) throw oppError;
+    if (!opportunities || opportunities.length === 0) {
+      return json({ status: "success", scored: 0, results: [], message: "Nenhuma oportunidade a processar." });
     }
 
-    // Cache de company_settings por owner_id
     const settingsCache = new Map<string, any>();
+    const productsCache = new Map<string, any[]>();
     const results: Array<{ opportunity_id: string; score: number; classification: string }> = [];
 
-    for (const opp of opportunities) {
+    for (const opp of opportunities as any[]) {
       const ownerId = opp.owner_id;
 
-      // Busca settings do owner se não estiver no cache
       if (!settingsCache.has(ownerId)) {
         const { data: settings } = await supabase
           .from("company_settings")
           .select("*")
           .eq("owner_id", ownerId)
           .maybeSingle();
-
-        settingsCache.set(ownerId, settings || {
-          score_green_min: 70,
-          score_yellow_min: 40,
-          available_capital: 50000,
-          min_margin_pct: 15,
-          service_states: [],
-          service_cities: [],
-        });
+        settingsCache.set(ownerId, settings ?? {});
       }
+      const st = settingsCache.get(ownerId) ?? {};
 
-      const settings = settingsCache.get(ownerId);
+      if (!productsCache.has(ownerId)) {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("name, category, keywords")
+          .eq("owner_id", ownerId)
+          .eq("is_active", true);
+        productsCache.set(ownerId, prods ?? []);
+      }
+      const products = productsCache.get(ownerId) ?? [];
 
-      // Busca análise de edital existente
-      const { data: editalAnalysis } = await supabase
-        .from("edital_analyses")
-        .select("risk_points, habilitation_info, samples_info, warranties_info, certificates_info")
-        .eq("opportunity_id", opp.id)
-        .maybeSingle();
-
-      // Busca produtos casados e cotações de fornecedores
-      const { data: oppProducts } = await supabase
+      const { data: matched } = await supabase
         .from("opportunity_products")
-        .select("product_id, products(name, avg_purchase_price, min_margin_pct, freight_cost)")
+        .select("product_id, match_reason")
         .eq("opportunity_id", opp.id);
 
-      // Busca simulação financeira mais recente se houver
-      const { data: sim } = await supabase
-        .from("financial_simulations")
-        .select("profit, margin_pct, required_capital")
-        .eq("opportunity_id", opp.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // ============================================================
-      // CÁLCULO DAS 6 DIMENSÕES DO SCORE (0 a 100)
-      // ============================================================
-      let scoreLucratividade = 15; // Max 25
-      let scoreRisco = 15;         // Max 20
-      let scoreCapital = 15;       // Max 20
-      let scoreCompetitividade = 10; // Max 15
-      let scoreLogistica = 6;      // Max 10
-      let scoreDocumental = 7;     // Max 10
-
       const reasons: string[] = [];
+      const haystack = `${norm(opp.object_description)} ${norm(opp.category)}`;
 
-      // 1. Lucratividade e Margem Potencial (0–25)
-      const targetMargin = settings.min_margin_pct || 15;
-      if (sim?.margin_pct) {
-        if (sim.margin_pct >= targetMargin * 1.5) {
-          scoreLucratividade = 25;
-          reasons.push(`Excelente margem calculada (${sim.margin_pct.toFixed(1)}%, bem acima da meta de ${targetMargin}%)`);
-        } else if (sim.margin_pct >= targetMargin) {
-          scoreLucratividade = 20;
-          reasons.push(`Margem adequada (${sim.margin_pct.toFixed(1)}% vs meta de ${targetMargin}%)`);
-        } else if (sim.margin_pct > 0) {
-          scoreLucratividade = 10;
-          reasons.push(`Margem abaixo da meta ideal (${sim.margin_pct.toFixed(1)}% vs ${targetMargin}%)`);
-        } else {
-          scoreLucratividade = 2;
-          reasons.push("Margem líquida calculada negativa ou nula");
-        }
-      } else {
-        // Estimativa se ainda não houver simulação
-        scoreLucratividade = 18;
-        reasons.push("Margem potencial estimada compatível com o catálogo cadastrado");
-      }
+      // 1. Compatibilidade de categoria/produto (0–30)
+      let fCompat = 0;
+      const matchReasons = (matched ?? []).map((m: any) => m.match_reason);
+      const prefCats: string[] = st.preferred_categories ?? [];
+      const catHit = prefCats.some((c) => haystack.includes(norm(c)));
 
-      // 2. Risco e Restrições do Edital (0–20)
-      const riskPointsCount = (editalAnalysis?.risk_points || []).length;
-      if (riskPointsCount === 0) {
-        scoreRisco = 20;
-        reasons.push("Edital limpo sem pontos críticos de risco identificados");
-      } else if (riskPointsCount <= 2) {
-        scoreRisco = 15;
-        reasons.push(`Risco moderado (${riskPointsCount} pontos de atenção identificados no edital)`);
-      } else {
-        scoreRisco = 7;
-        reasons.push(`Risco elevado: ${riskPointsCount} pontos críticos (prazos curtos ou exigências severas)`);
-      }
-
-      // 3. Adequação Financeira / Capital de Giro (0–20)
-      const availableCap = Number(settings.available_capital || 50000);
-      const estValue = Number(opp.estimated_value || 0);
-      const requiredCap = sim?.required_capital ? Number(sim.required_capital) : estValue * 0.7;
-
-      if (availableCap <= 0) {
-        scoreCapital = 12;
-      } else if (requiredCap <= availableCap * 0.5) {
-        scoreCapital = 20;
-        reasons.push(`Excelente folga de capital: consome ${((requiredCap / availableCap) * 100).toFixed(0)}% do capital disponível`);
-      } else if (requiredCap <= availableCap) {
-        scoreCapital = 15;
-        reasons.push(`Capital requerido (R$ ${requiredCap.toLocaleString("pt-BR")}) dentro do limite operacional`);
-      } else {
-        scoreCapital = 5;
-        reasons.push(`Capital requerido (R$ ${requiredCap.toLocaleString("pt-BR")}) excede o limite cadastrado (R$ ${availableCap.toLocaleString("pt-BR")})`);
-      }
-
-      // 4. Competitividade e Histórico do Órgão (0–15)
-      if (opp.is_me_epp) {
-        scoreCompetitividade = 15;
-        reasons.push("Licitação com tratamento exclusivo/diferenciado para ME/EPP");
-      } else {
-        scoreCompetitividade = 10;
-        reasons.push("Ampla concorrência de mercado");
-      }
-
-      // 5. Facilidade Operacional e Logística (0–10)
-      const states: string[] = settings.service_states || [];
-      const cities: string[] = settings.service_cities || [];
-
-      if (states.length > 0 && opp.state && !states.includes(opp.state)) {
-        scoreLogistica = 2;
-        reasons.push(`Estado ${opp.state} fora da malha prioritária cadastrada nas configurações`);
-      } else if (cities.length > 0 && opp.city && cities.some((c: string) => c.toLowerCase() === opp.city.toLowerCase())) {
-        scoreLogistica = 10;
-        reasons.push(`Município ${opp.city} na rota de atendimento prioritário direto`);
-      } else if (states.includes(opp.state)) {
-        scoreLogistica = 8;
-        reasons.push(`Localizado no estado ${opp.state} (região atendida pela empresa)`);
-      } else {
-        scoreLogistica = 6;
-      }
-
-      // 6. Complexidade Documental e Habilitação (0–10)
-      let docPenalties = 0;
-      if (opp.requires_sample) docPenalties += 3;
-      if (opp.requires_warranty) docPenalties += 2;
-      if (opp.requires_certificate) docPenalties += 2;
-      if (opp.requires_min_capital) docPenalties += 2;
-
-      scoreDocumental = Math.max(1, 10 - docPenalties);
-      if (docPenalties > 4) {
-        reasons.push("Exigência cumulativa de amostra, garantia e atestados prévios");
-      } else if (docPenalties === 0) {
-        reasons.push("Habilitação documental simplificada sem exigências extraordinárias");
-      }
-
-      // Soma ponderada total
-      const totalScore = Math.min(
-        100,
-        Math.max(
-          0,
-          Math.round(
-            scoreLucratividade +
-            scoreRisco +
-            scoreCapital +
-            scoreCompetitividade +
-            scoreLogistica +
-            scoreDocumental
-          )
+      if (matchReasons.includes("catmat")) {
+        fCompat = 30;
+        reasons.push("Produto do catálogo casado pelo código CATMAT/CATSER");
+      } else if (matchReasons.includes("category") || catHit) {
+        fCompat = 25;
+        reasons.push("Categoria compatível com o perfil cadastrado");
+      } else if (matchReasons.includes("keyword")) {
+        fCompat = 20;
+        reasons.push("Objeto menciona palavras-chave dos produtos cadastrados");
+      } else if (
+        products.some(
+          (p: any) =>
+            (p.keywords ?? []).some((k: string) => k.length > 2 && haystack.includes(norm(k))) ||
+            (p.category && haystack.includes(norm(p.category))),
         )
+      ) {
+        fCompat = 15;
+        reasons.push("Aderência parcial ao catálogo de produtos");
+      } else {
+        reasons.push("Sem correspondência clara com o catálogo cadastrado");
+      }
+
+      // 2. Valor dentro da faixa (0–20)
+      let fValue = 8;
+      const value = Number(opp.estimated_value ?? 0);
+      const minV = st.min_value != null ? Number(st.min_value) : null;
+      const maxV = st.max_value != null ? Number(st.max_value) : null;
+      const capital = st.available_capital != null ? Number(st.available_capital) : null;
+
+      if (!value) {
+        fValue = 8;
+        reasons.push("Valor estimado não informado pela fonte");
+      } else if ((minV === null || value >= minV) && (maxV === null || value <= maxV)) {
+        fValue = 20;
+        reasons.push(`Valor estimado dentro da faixa desejada (R$ ${value.toLocaleString("pt-BR")})`);
+      } else if (maxV !== null && value > maxV) {
+        fValue = value <= maxV * 1.5 ? 10 : 3;
+        reasons.push(`Valor acima do teto cadastrado (R$ ${value.toLocaleString("pt-BR")})`);
+      } else {
+        fValue = 10;
+        reasons.push(`Valor abaixo do mínimo cadastrado (R$ ${value.toLocaleString("pt-BR")})`);
+      }
+      if (capital && value && value > capital) {
+        fValue = Math.min(fValue, 8);
+        reasons.push("Valor exige capital de giro acima do disponível cadastrado");
+      }
+
+      // 3. Localização (0–15)
+      let fLocation = 7;
+      const states: string[] = st.service_states ?? [];
+      const cities: string[] = st.service_cities ?? [];
+      if (cities.length && opp.city && cities.some((c: string) => norm(c) === norm(opp.city))) {
+        fLocation = 15;
+        reasons.push(`Município atendido diretamente (${opp.city})`);
+      } else if (states.length && opp.state && states.includes(opp.state)) {
+        fLocation = 13;
+        reasons.push(`Estado atendido (${opp.state})`);
+      } else if (states.length && opp.state) {
+        fLocation = 3;
+        reasons.push(`Estado ${opp.state} fora da área de atendimento cadastrada`);
+      }
+
+      // 4. Modalidade preferida (0–10)
+      let fModality = 6;
+      const prefMods: string[] = st.preferred_modalities ?? [];
+      if (prefMods.length && opp.modality) {
+        if (prefMods.some((m) => norm(opp.modality).includes(norm(m)))) {
+          fModality = 10;
+          reasons.push(`Modalidade preferida (${opp.modality})`);
+        } else {
+          fModality = 3;
+          reasons.push(`Modalidade ${opp.modality} fora das preferências`);
+        }
+      }
+
+      // 5. Prazo de entrega (0–10)
+      let fDeadline = 6;
+      const maxDelivery = st.max_delivery_days != null ? Number(st.max_delivery_days) : null;
+      if (opp.delivery_deadline_days == null) {
+        fDeadline = 6;
+      } else if (maxDelivery === null) {
+        fDeadline = opp.delivery_deadline_days >= 15 ? 9 : 5;
+      } else if (opp.delivery_deadline_days >= maxDelivery) {
+        fDeadline = 10;
+        reasons.push(`Prazo de entrega confortável (${opp.delivery_deadline_days} dias)`);
+      } else {
+        fDeadline = 3;
+        reasons.push(`Prazo de entrega apertado (${opp.delivery_deadline_days} dias)`);
+      }
+
+      // 6. ME/EPP (0–10)
+      let fMeEpp = 5;
+      if (opp.is_me_epp === true) {
+        fMeEpp = 10;
+        reasons.push("Exclusiva/diferenciada para ME/EPP");
+      } else if (st.prefer_me_epp && opp.is_me_epp === false) {
+        fMeEpp = 2;
+        reasons.push("Ampla concorrência (perfil prefere ME/EPP)");
+      }
+
+      // 7. Exigências documentais (0–5)
+      let penalties = 0;
+      if (opp.requires_sample) penalties += 2;
+      if (opp.requires_certificate) penalties += 1;
+      if (opp.requires_warranty) penalties += 1;
+      if (opp.requires_min_capital) penalties += 1;
+      const fDocs = Math.max(0, 5 - penalties);
+      if (penalties >= 3) reasons.push("Exigências documentais acumuladas (amostra/atestado/garantia)");
+      if (penalties === 0) reasons.push("Sem exigências documentais extraordinárias");
+      if (opp.is_srp) reasons.push("Sistema de Registro de Preços (SRP)");
+
+      const totalScore = Math.max(
+        0,
+        Math.min(100, Math.round(fCompat + fValue + fLocation + fModality + fDeadline + fMeEpp + fDocs)),
+      );
+      const classification = classify(totalScore);
+
+      await supabase.from("opportunity_scores").upsert(
+        {
+          opportunity_id: opp.id,
+          score: totalScore,
+          classification,
+          factors: {
+            compatibilidade: { score: fCompat, max: 30 },
+            valor: { score: fValue, max: 20 },
+            localizacao: { score: fLocation, max: 15 },
+            modalidade: { score: fModality, max: 10 },
+            prazo_entrega: { score: fDeadline, max: 10 },
+            me_epp: { score: fMeEpp, max: 10 },
+            documental: { score: fDocs, max: 5 },
+          },
+          reasons,
+          computed_at: new Date().toISOString(),
+        },
+        { onConflict: "opportunity_id" },
       );
 
-      // Classificação conforme company_settings
-      const greenMin = settings.score_green_min || 70;
-      const yellowMin = settings.score_yellow_min || 40;
+      // Notificação apenas para oportunidades excelentes e não duplicadas
+      if (classification === "green" && !opp.canonical_id) {
+        const { data: already } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("opportunity_id", opp.id)
+          .eq("type", "high_score")
+          .maybeSingle();
 
-      let classification: "green" | "yellow" | "red" = "red";
-      if (totalScore >= greenMin) {
-        classification = "green";
-      } else if (totalScore >= yellowMin) {
-        classification = "yellow";
-      } else {
-        classification = "red";
-      }
-
-      const factorsJson = {
-        lucratividade: { score: scoreLucratividade, max: 25 },
-        risco_edital: { score: scoreRisco, max: 20 },
-        capital_giro: { score: scoreCapital, max: 20 },
-        competitividade: { score: scoreCompetitividade, max: 15 },
-        logistica: { score: scoreLogistica, max: 10 },
-        documental: { score: scoreDocumental, max: 10 },
-      };
-
-      // 7. Salva opportunity_scores
-      await supabase
-        .from("opportunity_scores")
-        .upsert(
-          {
+        if (!already) {
+          await supabase.from("notifications").insert({
+            owner_id: ownerId,
             opportunity_id: opp.id,
-            score: totalScore,
-            classification,
-            factors: factorsJson,
-            reasons,
-            computed_at: new Date().toISOString(),
-          },
-          { onConflict: "opportunity_id" }
-        );
-
-      // 8. Se for score verde (alta pontuação), enfileira notificação
-      if (classification === "green") {
-        await supabase.from("notifications").insert({
-          owner_id: ownerId,
-          opportunity_id: opp.id,
-          type: "high_score",
-          title: `Oportunidade Nota ${totalScore} 🟢 Encontrada!`,
-          message: `${opp.agency_name || "Órgão"}: ${opp.object_description?.slice(0, 100)}...`,
-        });
+            type: "high_score",
+            title: `Oportunidade excelente (${totalScore}) 🟢`,
+            message: `${opp.agency_name ?? "Órgão"}: ${(opp.object_description ?? "").slice(0, 120)}`,
+          });
+        }
       }
 
-      results.push({
-        opportunity_id: opp.id,
-        score: totalScore,
-        classification,
-      });
+      results.push({ opportunity_id: opp.id, score: totalScore, classification });
     }
 
-    return new Response(
-      JSON.stringify({
-        status: "success",
-        scored: results.length,
-        results,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ status: "success", scored: results.length, results });
   } catch (error: any) {
     console.error("Erro em compute-score:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Erro interno ao calcular score." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: error?.message ?? "Erro interno ao calcular score." }, 500);
   }
 });
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
