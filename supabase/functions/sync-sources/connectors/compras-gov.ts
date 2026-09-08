@@ -120,20 +120,31 @@ export const comprasGovConnector: SourceConnector = {
     let endpointUsed: string | null = null;
 
     for (const modalidade of MODALIDADES) {
-      for (const url of candidateEndpoints(base, modalidade)) {
-        const res = await getJson(url);
-        if (!res.ok) {
-          errors.push(`HTTP ${res.status} em ${url.split("?")[0]} (modalidade ${modalidade})`);
-          continue;
+      for (let pagina = 1; pagina <= MAX_PAGES; pagina++) {
+        let rows: any[] = [];
+        let ok = false;
+        for (const url of candidateEndpoints(base, modalidade, pagina)) {
+          const res = await getJson(url);
+          if (!res.ok) {
+            if (pagina === 1) {
+              errors.push(`HTTP ${res.status} em ${url.split("?")[0]} (modalidade ${modalidade})`);
+            }
+            continue;
+          }
+          endpointUsed ??= url.split("?")[0] ?? null;
+          rows = pickRows(res.body);
+          ok = true;
+          break;
         }
-        endpointUsed ??= url.split("?")[0] ?? null;
-        for (const r of pickRows(res.body)) {
+        if (!ok || rows.length === 0) break;
+        for (const r of rows) {
           const n = normalize(r, ctx);
           if (n) items.push(n);
         }
-        break; // modalidade coletada com sucesso
+        if (rows.length < PAGE_SIZE) break;
       }
     }
+
 
     if (items.length === 0 && errors.length > 0) {
       return {
