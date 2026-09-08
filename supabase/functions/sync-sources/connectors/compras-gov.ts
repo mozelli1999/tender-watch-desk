@@ -111,29 +111,38 @@ export const comprasGovConnector: SourceConnector = {
   accessStatus: "open_data",
   legalNote: "Dados Abertos do Governo Federal (Lei 12.527/2011, Decreto 8.777/2016).",
   run: async (ctx: ConnectorContext): Promise<ConnectorResult> => {
-    const endpoints = candidateEndpoints(ctx.baseUrl || "https://dadosabertos.compras.gov.br");
+    const base = ctx.baseUrl || "https://dadosabertos.compras.gov.br";
     const errors: string[] = [];
+    const items: NormalizedOpportunity[] = [];
+    let endpointUsed: string | null = null;
 
-    for (const url of endpoints) {
-      const res = await getJson(url);
-      if (!res.ok) {
-        errors.push(`HTTP ${res.status} em ${url.split("?")[0]}`);
-        continue;
+    for (const modalidade of MODALIDADES) {
+      for (const url of candidateEndpoints(base, modalidade)) {
+        const res = await getJson(url);
+        if (!res.ok) {
+          errors.push(`HTTP ${res.status} em ${url.split("?")[0]} (modalidade ${modalidade})`);
+          continue;
+        }
+        endpointUsed ??= url.split("?")[0] ?? null;
+        for (const r of pickRows(res.body)) {
+          const n = normalize(r, ctx);
+          if (n) items.push(n);
+        }
+        break; // modalidade coletada com sucesso
       }
-      const rows = pickRows(res.body);
-      const items = rows
-        .map((r) => normalize(r, ctx))
-        .filter((i): i is NormalizedOpportunity => i !== null);
-
-      return { items, error: null, endpointUsed: url.split("?")[0] ?? null };
     }
 
-    return {
-      items: [],
-      error:
-        `Compras.gov.br: nenhum endpoint oficial de dados abertos respondeu. ` +
-        `Detalhes: ${errors.join(" | ")}. As licitações federais continuam sendo captadas pelo PNCP.`,
-      endpointUsed: null,
-    };
+    if (items.length === 0 && errors.length > 0) {
+      return {
+        items: [],
+        error:
+          `Compras.gov.br: nenhum endpoint oficial de dados abertos respondeu. ` +
+          `Detalhes: ${errors.slice(0, 4).join(" | ")}. As licitações federais continuam sendo captadas pelo PNCP.`,
+        endpointUsed,
+      };
+    }
+
+    return { items, error: null, endpointUsed };
   },
+
 };
