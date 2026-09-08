@@ -19,16 +19,24 @@ function isoDate(offsetDays: number): string {
   return new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
 }
 
-function candidateEndpoints(base: string): string[] {
+// Endpoints e parâmetros conforme a especificação oficial publicada em
+// https://dadosabertos.compras.gov.br/v3/api-docs
+// dataPublicacaoPncpInicial/Final e codigoModalidade são obrigatórios.
+const MODALIDADES = [6, 4, 8, 9, 12];
+const PAGE_SIZE = 50;
+
+function candidateEndpoints(base: string, modalidade: number): string[] {
   const b = base.replace(/\/$/, "");
   const de = isoDate(-3);
   const ate = isoDate(0);
   return [
-    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=1&tamanhoPagina=50&dataPublicacaoPncpInicial=${de}&dataPublicacaoPncpFinal=${ate}`,
-    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&tamanhoPagina=50&data_publicacao=${ate}`,
-    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&data_publicacao=${ate}`,
+    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=1&tamanhoPagina=${PAGE_SIZE}` +
+      `&dataPublicacaoPncpInicial=${de}&dataPublicacaoPncpFinal=${ate}&codigoModalidade=${modalidade}`,
+    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&tamanhoPagina=${PAGE_SIZE}` +
+      `&data_publicacao_inicial=${de}&data_publicacao_final=${ate}&modalidade=${modalidade}`,
   ];
 }
+
 
 function pickRows(body: any): any[] {
   if (Array.isArray(body)) return body;
