@@ -32,10 +32,21 @@ const MODALITIES: Record<number, string> = {
   13: "Leilão - Presencial",
 };
 
-// A API exige a modalidade; percorremos as mais relevantes para compras de materiais.
-const MODALITIES_TO_FETCH = [6, 4, 8, 9, 12];
+// A API exige a modalidade; percorremos todas as modalidades da Lei 14.133/2021.
+const MODALITIES_TO_FETCH = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 const PAGE_SIZE = 50;
 const MAX_PAGES_PER_MODALITY = 4;
+
+/** Monta o link do edital no PNCP: /app/editais/{cnpj}/{ano}/{sequencial} */
+export function pncpEditalUrl(r: any): string {
+  const cnpj = String(r?.orgaoEntidade?.cnpj ?? "").replace(/\D/g, "");
+  const ano = String(r?.anoCompra ?? "").replace(/\D/g, "");
+  const seq = String(r?.sequencialCompra ?? r?.numeroCompra ?? "").replace(/\D/g, "");
+  if (cnpj && ano && seq) {
+    return `https://pncp.gov.br/app/editais/${cnpj}/${ano}/${Number(seq)}`;
+  }
+  return "https://pncp.gov.br/app/editais";
+}
 
 /** Identifica o portal/sistema de origem a partir do link do sistema de origem. */
 export function portalFromLink(link: unknown): string | null {

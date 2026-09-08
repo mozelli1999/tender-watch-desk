@@ -102,15 +102,19 @@ const BRAZILIAN_STATES = [
 ];
 
 const MODALITIES = [
-  "Pregão Eletrônico",
-  "Pregão Presencial",
+  "Pregão - Eletrônico",
+  "Pregão - Presencial",
+  "Concorrência - Eletrônica",
+  "Concorrência - Presencial",
   "Dispensa de Licitação",
   "Inexigibilidade",
-  "Concorrência",
-  "Tomada de Preços",
-  "Convite",
+  "Credenciamento",
+  "Pré-qualificação",
+  "Manifestação de Interesse",
   "Concurso",
-  "Leilão",
+  "Diálogo Competitivo",
+  "Leilão - Eletrônico",
+  "Leilão - Presencial",
 ];
 
 function BuscaPage() {
