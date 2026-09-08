@@ -23,19 +23,22 @@ function isoDate(offsetDays: number): string {
 // https://dadosabertos.compras.gov.br/v3/api-docs
 // dataPublicacaoPncpInicial/Final e codigoModalidade são obrigatórios.
 const MODALIDADES = [6, 4, 8, 9, 12];
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100; // a API exige tamanhoPagina entre 10 e 500
+const WINDOW_DAYS = 15; // os dados abertos federais têm alguns dias de defasagem
+const MAX_PAGES = 3;
 
-function candidateEndpoints(base: string, modalidade: number): string[] {
+function candidateEndpoints(base: string, modalidade: number, pagina: number): string[] {
   const b = base.replace(/\/$/, "");
-  const de = isoDate(-3);
+  const de = isoDate(-WINDOW_DAYS);
   const ate = isoDate(0);
   return [
-    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=1&tamanhoPagina=${PAGE_SIZE}` +
+    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=${pagina}&tamanhoPagina=${PAGE_SIZE}` +
       `&dataPublicacaoPncpInicial=${de}&dataPublicacaoPncpFinal=${ate}&codigoModalidade=${modalidade}`,
-    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&tamanhoPagina=${PAGE_SIZE}` +
+    `${b}/modulo-legado/1_consultarLicitacao?pagina=${pagina}&tamanhoPagina=${PAGE_SIZE}` +
       `&data_publicacao_inicial=${de}&data_publicacao_final=${ate}&modalidade=${modalidade}`,
   ];
 }
+
 
 
 function pickRows(body: any): any[] {
