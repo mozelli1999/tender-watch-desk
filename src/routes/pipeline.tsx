@@ -406,179 +406,211 @@ function PipelinePage() {
         )}
 
         {/* Quadro Kanban (Scroll Horizontal Suave) */}
+        {/* Nota mobile: deslize horizontalmente para ver todas as etapas */}
         {loading ? (
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="min-w-[280px] w-[300px] space-y-3 shrink-0">
+              <div key={i} className="min-w-[260px] w-[280px] space-y-3 shrink-0 snap-start">
                 <Skeleton className="h-10 w-full rounded-lg" />
-                <Skeleton className="h-36 w-full rounded-lg" />
-                <Skeleton className="h-36 w-full rounded-lg" />
+                <Skeleton className="h-32 w-full rounded-lg" />
+                <Skeleton className="h-32 w-full rounded-lg" />
               </div>
             ))}
           </div>
+        ) : filteredItems.length === 0 && !searchQuery ? (
+          <Card className="border-border bg-card shadow-xs">
+            <CardContent className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Workflow className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-1.5 max-w-sm">
+                <h3 className="text-base font-bold text-foreground">Seu funil está vazio</h3>
+                <p className="text-xs text-muted-foreground">
+                  Ainda não há oportunidades no pipeline. Explore os editais compatíveis e mova os mais interessantes para cá.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center pt-1">
+                <Button variant="outline" size="sm" onClick={() => navigate({ to: "/melhores-do-dia" })} className="text-xs gap-2">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Ver Top 10 do Dia
+                </Button>
+                <Button size="sm" onClick={() => navigate({ to: "/busca" })} className="text-xs gap-2">
+                  <Eye className="h-3.5 w-3.5" />
+                  Buscar Editais
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-6 pt-1 select-none min-h-[600px]">
-            {PIPELINE_STAGES.map((col, colIdx) => {
-              const colItems = filteredItems.filter((i) => i.stage === col.key);
+          <>
+            {/* Indicador de scroll no mobile */}
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1 md:hidden">
+              <SlidersHorizontal className="h-3 w-3" />
+              Deslize para ver todas as {PIPELINE_STAGES.length} etapas
+            </p>
+            <div className="flex gap-3 overflow-x-auto pb-6 pt-1 select-none min-h-[520px] snap-x snap-mandatory md:snap-none">
+              {PIPELINE_STAGES.map((col, colIdx) => {
+                const colItems = filteredItems.filter((i) => i.stage === col.key);
 
-              return (
-                <div
-                  key={col.key}
-                  className="min-w-[290px] w-[310px] flex flex-col shrink-0 bg-muted/20 border border-border/70 rounded-xl overflow-hidden shadow-2xs"
-                >
-                  {/* Cabeçalho da Coluna */}
-                  <div className={`p-3 border-b border-border bg-card/60 flex items-center justify-between border-t-2 ${col.color}`}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-foreground">
-                        {col.title}
-                      </span>
-                    </div>
-                    <Badge variant="secondary" className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${col.badgeBg}`}>
-                      {colItems.length}
-                    </Badge>
-                  </div>
-
-                  {/* Lista de Cards da Etapa */}
-                  <div className="p-2 space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
-                    {colItems.length === 0 ? (
-                      <div className="h-32 flex flex-col items-center justify-center text-center p-4 text-[11px] text-muted-foreground/60 border border-dashed border-border/60 rounded-lg">
-                        <span>Nenhuma oportunidade nesta etapa</span>
+                return (
+                  <div
+                    key={col.key}
+                    className="min-w-[270px] w-[285px] flex flex-col shrink-0 bg-muted/20 border border-border/70 rounded-xl overflow-hidden shadow-2xs snap-start md:w-[300px]"
+                  >
+                    {/* Cabeçalho da Coluna */}
+                    <div className={`p-3 border-b border-border bg-card/60 flex items-center justify-between border-t-2 ${col.color}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">
+                          {col.title}
+                        </span>
                       </div>
-                    ) : (
-                      colItems.map((item) => (
-                        <Card
-                          key={item.id}
-                          className={`border-border/90 shadow-xs hover:border-primary/50 transition-all bg-card ${
-                            item.is_discarded ? "opacity-50" : ""
-                          }`}
-                        >
-                          <CardContent className="p-3.5 space-y-2.5">
-                            {/* Topo do Card: Órgão e Favorito */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-0.5 min-w-0 flex-1">
-                                <h4 className="text-xs font-bold text-foreground hover:text-primary transition-colors truncate">
-                                  <Link to="/oportunidade/$id" params={{ id: item.opportunity_id }}>
-                                    {item.agency_name || "Órgão Público"}
-                                  </Link>
-                                </h4>
-                                {item.process_number && (
-                                  <p className="text-[10px] text-muted-foreground font-mono truncate">
-                                    Proc: {item.process_number}
-                                  </p>
-                                )}
+                      <Badge variant="secondary" className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${col.badgeBg}`}>
+                        {colItems.length}
+                      </Badge>
+                    </div>
+
+                    {/* Lista de Cards da Etapa */}
+                    <div className="p-2 space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-300px)]">
+                      {colItems.length === 0 ? (
+                        <div className="h-28 flex flex-col items-center justify-center text-center p-4 text-[11px] text-muted-foreground/60 border border-dashed border-border/60 rounded-lg">
+                          <span>Nenhuma oportunidade nesta etapa</span>
+                        </div>
+                      ) : (
+                        colItems.map((item) => (
+                          <Card
+                            key={item.id}
+                            className={`border-border/90 shadow-xs hover:border-primary/50 transition-all bg-card ${
+                              item.is_discarded ? "opacity-50" : ""
+                            }`}
+                          >
+                            <CardContent className="p-3.5 space-y-2.5">
+                              {/* Topo do Card: Órgão e Favorito */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <h4 className="text-xs font-bold text-foreground hover:text-primary transition-colors truncate">
+                                    <Link to="/oportunidade/$id" params={{ id: item.opportunity_id }}>
+                                      {item.agency_name || "Órgão Público"}
+                                    </Link>
+                                  </h4>
+                                  {item.process_number && (
+                                    <p className="text-[10px] text-muted-foreground font-mono truncate">
+                                      Proc: {item.process_number}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleFavorite(item.opportunity_id, item.is_favorite)}
+                                    className={`p-1 rounded transition-colors ${
+                                      item.is_favorite ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    title="Favoritar"
+                                  >
+                                    <Star className={`h-3.5 w-3.5 ${item.is_favorite ? "fill-amber-400" : ""}`} />
+                                  </button>
+                                </div>
                               </div>
 
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleFavorite(item.opportunity_id, item.is_favorite)}
-                                  className={`p-1 rounded transition-colors ${
-                                    item.is_favorite ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
-                                  }`}
-                                  title="Favoritar"
-                                >
-                                  <Star className={`h-3.5 w-3.5 ${item.is_favorite ? "fill-amber-400" : ""}`} />
-                                </button>
-                              </div>
-                            </div>
+                              {/* Objeto Resumido */}
+                              <p className="text-[11px] text-foreground/80 line-clamp-2 leading-tight">
+                                {item.object_description || "Sem descrição informada."}
+                              </p>
 
-                            {/* Objeto Resumido */}
-                            <p className="text-[11px] text-foreground/80 line-clamp-2 leading-tight">
-                              {item.object_description || "Sem descrição informada."}
-                            </p>
+                              {/* Valores e Tags */}
+                              <div className="space-y-1 pt-1 border-t border-border/50 text-[11px]">
+                                <div className="flex items-center justify-between font-semibold text-foreground">
+                                  <span>{formatCurrency(item.estimated_value)}</span>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[9px] px-1.5 py-0"
+                                  >
+                                    {item.score > 0 ? `${item.score} pts` : "Score"}
+                                  </Badge>
+                                </div>
 
-                            {/* Valores e Tags */}
-                            <div className="space-y-1 pt-1 border-t border-border/50 text-[11px]">
-                              <div className="flex items-center justify-between font-semibold text-foreground">
-                                <span>{formatCurrency(item.estimated_value)}</span>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[9px] px-1.5 py-0"
-                                >
-                                  {item.score > 0 ? `${item.score} pts` : "Score"}
-                                </Badge>
-                              </div>
-
-                              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                                {item.state && (
-                                  <span className="flex items-center gap-0.5">
-                                    <MapPin className="h-2.5 w-2.5" />
-                                    {item.state}
-                                  </span>
-                                )}
-                                {item.delivery_deadline_days && (
-                                  <span className="flex items-center gap-0.5">
-                                    <Clock className="h-2.5 w-2.5" />
-                                    {item.delivery_deadline_days}d
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Ações de Transição de Etapa */}
-                            <div className="flex items-center justify-between pt-1 border-t border-border/50 gap-1">
-                              {/* Botão Voltar Etapa */}
-                              {colIdx > 0 ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx - 1]!.key)}
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                  title={`Voltar para ${PIPELINE_STAGES[colIdx - 1]!.title}`}
-                                >
-                                  <ChevronLeft className="h-3 w-3" />
-                                </Button>
-                              ) : <span className="w-6" />}
-
-                              {/* Ações Rápidas de Links */}
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => navigate({ to: "/simulador/$opportunityId", params: { opportunityId: item.opportunity_id } })}
-                                  className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
-                                  title="Simular Custos"
-                                >
-                                  <Calculator className="h-3 w-3" />
-                                </Button>
-
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openRecordResultModal(item)}
-                                  className="h-6 px-1.5 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
-                                  title="Registrar Resultado Real"
-                                >
-                                  <Trophy className="h-3 w-3" />
-                                </Button>
+                                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                  {item.state && (
+                                    <span className="flex items-center gap-0.5">
+                                      <MapPin className="h-2.5 w-2.5" />
+                                      {item.state}
+                                    </span>
+                                  )}
+                                  {item.delivery_deadline_days && (
+                                    <span className="flex items-center gap-0.5">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      {item.delivery_deadline_days}d
+                                    </span>
+                                  )}
+                                </div>
                               </div>
 
-                              {/* Botão Avançar Etapa */}
-                              {colIdx < PIPELINE_STAGES.length - 1 ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx + 1]!.key)}
-                                  className="h-6 w-6 p-0 text-primary hover:bg-primary/10"
-                                  title={`Avançar para ${PIPELINE_STAGES[colIdx + 1]!.title}`}
-                                >
-                                  <ChevronRight className="h-3.5 w-3.5" />
-                                </Button>
-                              ) : <span className="w-6" />}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
+                              {/* Ações de Transição de Etapa */}
+                              <div className="flex items-center justify-between pt-1 border-t border-border/50 gap-1">
+                                {/* Botão Voltar Etapa */}
+                                {colIdx > 0 ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx - 1]!.key)}
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                    title={`Voltar para ${PIPELINE_STAGES[colIdx - 1]!.title}`}
+                                  >
+                                    <ChevronLeft className="h-3 w-3" />
+                                  </Button>
+                                ) : <span className="w-6" />}
+
+                                {/* Ações Rápidas de Links */}
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate({ to: "/simulador/$opportunityId", params: { opportunityId: item.opportunity_id } })}
+                                    className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                                    title="Simular Custos"
+                                  >
+                                    <Calculator className="h-3 w-3" />
+                                  </Button>
+
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openRecordResultModal(item)}
+                                    className="h-6 px-1.5 text-[10px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                                    title="Registrar Resultado Real"
+                                  >
+                                    <Trophy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+
+                                {/* Botão Avançar Etapa */}
+                                {colIdx < PIPELINE_STAGES.length - 1 ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStage(item.opportunity_id, PIPELINE_STAGES[colIdx + 1]!.key)}
+                                    className="h-6 w-6 p-0 text-primary hover:bg-primary/10"
+                                    title={`Avançar para ${PIPELINE_STAGES[colIdx + 1]!.title}`}
+                                  >
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                  </Button>
+                                ) : <span className="w-6" />}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Modal para Registrar Resultado Real de Participação */}
