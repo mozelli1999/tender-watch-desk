@@ -75,11 +75,8 @@ function normalize(r: any, ctx: ConnectorContext): NormalizedOpportunity | null 
     owner_id: ctx.ownerId,
     source_id: ctx.sourceId,
     source_external_id: externalId,
-    source_url:
-      link ??
-      (r.numeroControlePNCP
-        ? `https://pncp.gov.br/app/editais/${String(r.numeroControlePNCP).replace(/[^0-9-]/g, "")}`
-        : "https://pncp.gov.br/app/editais"),
+    source_url: link ?? pncpEditalUrl(r),
+
     agency_name: orgao.razaoSocial ?? unidade.nomeUnidade ?? null,
     process_number: r.processo ?? (r.numeroCompra ? `${r.numeroCompra}/${r.anoCompra ?? ""}` : null),
     modality,
