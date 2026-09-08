@@ -19,16 +19,27 @@ function isoDate(offsetDays: number): string {
   return new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
 }
 
-function candidateEndpoints(base: string): string[] {
+// Endpoints e parâmetros conforme a especificação oficial publicada em
+// https://dadosabertos.compras.gov.br/v3/api-docs
+// dataPublicacaoPncpInicial/Final e codigoModalidade são obrigatórios.
+const MODALIDADES = [6, 4, 8, 9, 12];
+const PAGE_SIZE = 100; // a API exige tamanhoPagina entre 10 e 500
+const WINDOW_DAYS = 15; // os dados abertos federais têm alguns dias de defasagem
+const MAX_PAGES = 3;
+
+function candidateEndpoints(base: string, modalidade: number, pagina: number): string[] {
   const b = base.replace(/\/$/, "");
-  const de = isoDate(-3);
+  const de = isoDate(-WINDOW_DAYS);
   const ate = isoDate(0);
   return [
-    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=1&tamanhoPagina=50&dataPublicacaoPncpInicial=${de}&dataPublicacaoPncpFinal=${ate}`,
-    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&tamanhoPagina=50&data_publicacao=${ate}`,
-    `${b}/modulo-legado/1_consultarLicitacao?pagina=1&data_publicacao=${ate}`,
+    `${b}/modulo-contratacoes/1_consultarContratacoes_PNCP_14133?pagina=${pagina}&tamanhoPagina=${PAGE_SIZE}` +
+      `&dataPublicacaoPncpInicial=${de}&dataPublicacaoPncpFinal=${ate}&codigoModalidade=${modalidade}`,
+    `${b}/modulo-legado/1_consultarLicitacao?pagina=${pagina}&tamanhoPagina=${PAGE_SIZE}` +
+      `&data_publicacao_inicial=${de}&data_publicacao_final=${ate}&modalidade=${modalidade}`,
   ];
 }
+
+
 
 function pickRows(body: any): any[] {
   if (Array.isArray(body)) return body;
@@ -103,29 +114,49 @@ export const comprasGovConnector: SourceConnector = {
   accessStatus: "open_data",
   legalNote: "Dados Abertos do Governo Federal (Lei 12.527/2011, Decreto 8.777/2016).",
   run: async (ctx: ConnectorContext): Promise<ConnectorResult> => {
-    const endpoints = candidateEndpoints(ctx.baseUrl || "https://dadosabertos.compras.gov.br");
+    const base = ctx.baseUrl || "https://dadosabertos.compras.gov.br";
     const errors: string[] = [];
+    const items: NormalizedOpportunity[] = [];
+    let endpointUsed: string | null = null;
 
-    for (const url of endpoints) {
-      const res = await getJson(url);
-      if (!res.ok) {
-        errors.push(`HTTP ${res.status} em ${url.split("?")[0]}`);
-        continue;
+    for (const modalidade of MODALIDADES) {
+      for (let pagina = 1; pagina <= MAX_PAGES; pagina++) {
+        let rows: any[] = [];
+        let ok = false;
+        for (const url of candidateEndpoints(base, modalidade, pagina)) {
+          const res = await getJson(url);
+          if (!res.ok) {
+            if (pagina === 1) {
+              errors.push(`HTTP ${res.status} em ${url.split("?")[0]} (modalidade ${modalidade})`);
+            }
+            continue;
+          }
+          endpointUsed ??= url.split("?")[0] ?? null;
+          rows = pickRows(res.body);
+          ok = true;
+          break;
+        }
+        if (!ok || rows.length === 0) break;
+        for (const r of rows) {
+          const n = normalize(r, ctx);
+          if (n) items.push(n);
+        }
+        if (rows.length < PAGE_SIZE) break;
       }
-      const rows = pickRows(res.body);
-      const items = rows
-        .map((r) => normalize(r, ctx))
-        .filter((i): i is NormalizedOpportunity => i !== null);
-
-      return { items, error: null, endpointUsed: url.split("?")[0] ?? null };
     }
 
-    return {
-      items: [],
-      error:
-        `Compras.gov.br: nenhum endpoint oficial de dados abertos respondeu. ` +
-        `Detalhes: ${errors.join(" | ")}. As licitações federais continuam sendo captadas pelo PNCP.`,
-      endpointUsed: null,
-    };
+
+    if (items.length === 0 && errors.length > 0) {
+      return {
+        items: [],
+        error:
+          `Compras.gov.br: nenhum endpoint oficial de dados abertos respondeu. ` +
+          `Detalhes: ${errors.slice(0, 4).join(" | ")}. As licitações federais continuam sendo captadas pelo PNCP.`,
+        endpointUsed,
+      };
+    }
+
+    return { items, error: null, endpointUsed };
   },
+
 };
