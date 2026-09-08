@@ -444,7 +444,7 @@ function HistoricoPage() {
         )}
 
         {/* Seção 2: Gráficos de Inteligência */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Gráfico de Evolução Mensal */}
           <Card className="border-border shadow-xs">
             <CardHeader className="pb-2">

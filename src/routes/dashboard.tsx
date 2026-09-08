@@ -310,17 +310,17 @@ function DashboardPage() {
 
         {/* Seção 1: KPI Cards */}
         {loading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="p-4 space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-7 w-14" />
+                <Skeleton className="h-3 w-24" />
               </Card>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {/* Novas Oportunidades */}
             <Card className="border-border shadow-xs hover:border-primary/50 transition-colors">
               <CardContent className="p-4 space-y-1">
@@ -438,7 +438,7 @@ function DashboardPage() {
         </Card>
 
         {/* Seção 3: Gráficos de Distribuição */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Gráfico 1: Oportunidades por Categoria */}
           <Card className="border-border shadow-xs">
             <CardHeader className="pb-2">
@@ -534,7 +534,7 @@ function DashboardPage() {
         </div>
 
         {/* Seção 4: Favoritas & Central de Notificações */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Coluna 1 & 2: Oportunidades Favoritas Recentes */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">

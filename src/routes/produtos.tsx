@@ -453,6 +453,7 @@ function ProdutosPage() {
           </div>
         ) : (
           <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
@@ -598,6 +599,7 @@ function ProdutosPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         )}
 
