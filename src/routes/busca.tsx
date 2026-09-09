@@ -101,20 +101,21 @@ const BRAZILIAN_STATES = [
   "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ];
 
-const MODALITIES = [
-  "Pregão - Eletrônico",
-  "Pregão - Presencial",
-  "Concorrência - Eletrônica",
-  "Concorrência - Presencial",
-  "Dispensa de Licitação",
-  "Inexigibilidade",
-  "Credenciamento",
-  "Pré-qualificação",
-  "Manifestação de Interesse",
-  "Concurso",
-  "Diálogo Competitivo",
-  "Leilão - Eletrônico",
-  "Leilão - Presencial",
+// Rótulo oficial do PNCP + termo usado no filtro (o PNCP grava "Dispensa" sem complemento).
+const MODALITIES: { label: string; value: string }[] = [
+  { label: "Pregão - Eletrônico", value: "Pregão - Eletrônico" },
+  { label: "Pregão - Presencial", value: "Pregão - Presencial" },
+  { label: "Concorrência - Eletrônica", value: "Concorrência - Eletrônica" },
+  { label: "Concorrência - Presencial", value: "Concorrência - Presencial" },
+  { label: "Dispensa de Licitação", value: "Dispensa" },
+  { label: "Inexigibilidade", value: "Inexigibilidade" },
+  { label: "Credenciamento", value: "Credenciamento" },
+  { label: "Pré-qualificação", value: "Pré-qualificação" },
+  { label: "Manifestação de Interesse", value: "Manifestação de Interesse" },
+  { label: "Concurso", value: "Concurso" },
+  { label: "Diálogo Competitivo", value: "Diálogo Competitivo" },
+  { label: "Leilão - Eletrônico", value: "Leilão - Eletrônico" },
+  { label: "Leilão - Presencial", value: "Leilão - Presencial" },
 ];
 
 function BuscaPage() {
@@ -498,8 +499,8 @@ function BuscaPage() {
                     <SelectContent>
                       <SelectItem value="all">Todas as modalidades</SelectItem>
                       {MODALITIES.map((mod) => (
-                        <SelectItem key={mod} value={mod}>
-                          {mod}
+                        <SelectItem key={mod.value} value={mod.value}>
+                          {mod.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
