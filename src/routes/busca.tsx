@@ -499,8 +499,8 @@ function BuscaPage() {
                     <SelectContent>
                       <SelectItem value="all">Todas as modalidades</SelectItem>
                       {MODALITIES.map((mod) => (
-                        <SelectItem key={mod} value={mod}>
-                          {mod}
+                        <SelectItem key={mod.value} value={mod.value}>
+                          {mod.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
