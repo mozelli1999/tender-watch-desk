@@ -129,18 +129,25 @@ export const pncpConnector: SourceConnector = {
     const errors: string[] = [];
     let endpointUsed: string | null = null;
 
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
     for (const modalidade of MODALITIES_TO_FETCH) {
       for (let pagina = 1; pagina <= MAX_PAGES_PER_MODALITY; pagina++) {
         const url =
           `${base}/contratacoes/publicacao?dataInicial=${dataInicial}&dataFinal=${dataFinal}` +
           `&codigoModalidadeContratacao=${modalidade}&pagina=${pagina}&tamanhoPagina=${PAGE_SIZE}`;
 
-        const res = await getJson(url);
+        // O PNCP limita a taxa de requisições: espaçamos as chamadas e reagimos ao HTTP 429.
+        let res = await getJson(url);
+        for (let tentativa = 1; tentativa <= 3 && res.status === 429; tentativa++) {
+          await sleep(2000 * tentativa);
+          res = await getJson(url);
+        }
 
         // 204 = sem registros para essa modalidade/página
         if (res.status === 204) break;
         if (!res.ok) {
-          errors.push(`modalidade ${modalidade} p${pagina}: HTTP ${res.status} ${res.text ?? ""}`);
+          errors.push(`modalidade ${modalidade} p${pagina}: HTTP ${res.status}`);
           break;
         }
 
@@ -153,7 +160,9 @@ export const pncpConnector: SourceConnector = {
 
         const totalPaginas = Number(res.body?.totalPaginas ?? 1);
         if (registros.length < PAGE_SIZE || pagina >= totalPaginas) break;
+        await sleep(600);
       }
+      await sleep(900);
     }
 
     if (items.length === 0 && errors.length > 0) {
